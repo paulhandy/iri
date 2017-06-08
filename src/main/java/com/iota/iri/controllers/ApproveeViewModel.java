@@ -29,7 +29,9 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     public static ApproveeViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new ApproveeViewModel((Approvee) tangle.load(Approvee.class, hash), hash);
+        Approvee approvee = new Approvee();
+        tangle.load(approvee, hash);
+        return new ApproveeViewModel(approvee, hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
@@ -63,7 +65,9 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     public static ApproveeViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Approvee.class, Hash.class);
+        Approvee approvee = new Approvee();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(approvee, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
         }
@@ -71,7 +75,8 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     public ApproveeViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.next(Approvee.class, hash);
+        Approvee approvee = new Approvee();
+        Pair<Indexable, Persistable> bundlePair = tangle.next(approvee, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
         }

@@ -88,11 +88,9 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
+    public Pair<Indexable, Persistable> latest(Persistable object, Indexable index) throws Exception {
         return null;
     }
-
-
 
     @Override
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> other) throws Exception {
@@ -100,7 +98,7 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable get(Class<?> model, Indexable index) throws Exception {
+    public Persistable get(Persistable model, Indexable index) throws Exception {
         return null;
     }
 
@@ -120,22 +118,22 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable seek(Class<?> model, byte[] key) throws Exception {
+    public Persistable seek(Persistable model, byte[] key) throws Exception {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> next(Persistable model, Indexable index) throws Exception {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> previous(Persistable model, Indexable index) throws Exception {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception {
+    public Pair<Indexable, Persistable> first(Persistable model, Indexable indexModel) throws Exception {
         return null;
     }
 

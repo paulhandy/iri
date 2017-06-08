@@ -29,7 +29,9 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     public static AddressViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new AddressViewModel((Address) tangle.load(Address.class, hash), hash);
+        Address address = new Address();
+        tangle.load(address, hash);
+        return new AddressViewModel(address, hash);
     }
 
     public boolean store(Tangle tangle) throws Exception {
@@ -57,15 +59,17 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     public static AddressViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Address.class, Hash.class);
+        Address address = new Address();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(address, hash);
         if(bundlePair != null && bundlePair.hi != null) {
-            return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
+            return new AddressViewModel(address, hash);
         }
         return null;
     }
 
     public AddressViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);
+        Pair<Indexable, Persistable> bundlePair = tangle.next(self, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
         }

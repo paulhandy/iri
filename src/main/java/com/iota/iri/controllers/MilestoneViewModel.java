@@ -42,8 +42,9 @@ public class MilestoneViewModel {
     }
 
     public static boolean load(Tangle tangle, int index) throws Exception {
-        Milestone milestone = (Milestone) tangle.load(Milestone.class, new IntegerIndex(index));
-        if(milestone != null && milestone.hash != null) {
+        Milestone milestone = new Milestone();
+        tangle.load(milestone, new IntegerIndex(index));
+        if(milestone.hash != null) {
             milestones.put(index, new MilestoneViewModel(milestone));
             return true;
         }
@@ -51,37 +52,39 @@ public class MilestoneViewModel {
     }
 
     public static MilestoneViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.getFirst(Milestone.class, IntegerIndex.class);
-        if(milestonePair != null && milestonePair.hi != null) {
-            Milestone milestone = (Milestone) milestonePair.hi;
+        Milestone milestone = new Milestone();
+        IntegerIndex integerIndex = new IntegerIndex(0);
+        tangle.getFirst(milestone, integerIndex);
+        if(milestone.hash != null) {
             return new MilestoneViewModel(milestone);
         }
         return null;
     }
 
     public static MilestoneViewModel latest(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.getLatest(Milestone.class, IntegerIndex.class);
-        if(milestonePair != null && milestonePair.hi != null) {
-            Milestone milestone = (Milestone) milestonePair.hi;
+        Milestone milestone = new Milestone();
+        IntegerIndex integerIndex = new IntegerIndex(0);
+        tangle.getLatest(milestone, integerIndex);
+        if(milestone.hash != null) {
             return new MilestoneViewModel(milestone);
         }
         return null;
     }
 
     public MilestoneViewModel previous(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.previous(Milestone.class, this.milestone.index);
+        Milestone milestone = new Milestone();
+        Pair<Indexable, Persistable> milestonePair = tangle.previous(milestone, this.milestone.index);
         if(milestonePair != null && milestonePair.hi != null) {
-            Milestone milestone = (Milestone) milestonePair.hi;
-            return new MilestoneViewModel((Milestone) milestone);
+            return new MilestoneViewModel(milestone);
         }
         return null;
     }
 
     public MilestoneViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, this.milestone.index);
-        if(milestonePair != null && milestonePair.hi != null) {
-            Milestone milestone = (Milestone) milestonePair.hi;
-            return new MilestoneViewModel((Milestone) milestone);
+        Milestone milestone = new Milestone();
+        tangle.next(milestone, this.milestone.index);
+        if(milestone.hash != null) {
+            return new MilestoneViewModel(milestone);
         }
         return null;
     }
@@ -103,9 +106,10 @@ public class MilestoneViewModel {
     }
 
     public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.previous(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null && milestonePair.hi != null) {
-            return new MilestoneViewModel((Milestone) milestonePair.hi);
+        Milestone milestone = new Milestone();
+        tangle.previous(milestone, new IntegerIndex(index));
+        if(milestone.hash != null) {
+            return new MilestoneViewModel(milestone);
         }
         return null;
     }
@@ -114,9 +118,10 @@ public class MilestoneViewModel {
         if(index <= 0) {
             return first(tangle);
         }
-        Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null && milestonePair.hi != null) {
-            return new MilestoneViewModel((Milestone) milestonePair.hi);
+        Milestone milestone = new Milestone();
+        tangle.next(milestone, new IntegerIndex(index));
+        if(milestone.hash != null) {
+            return new MilestoneViewModel(milestone);
         }
         return null;
     }

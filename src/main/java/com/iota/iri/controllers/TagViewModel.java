@@ -29,7 +29,9 @@ public class TagViewModel implements HashesViewModel {
     }
 
     public static TagViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new TagViewModel((Tag) tangle.load(Tag.class, hash), hash);
+        Tag tag = new Tag();
+        tangle.load(tag, hash);
+        return new TagViewModel(tag, hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
@@ -62,7 +64,9 @@ public class TagViewModel implements HashesViewModel {
         tangle.delete(Tag.class,hash);
     }
     public static TagViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Tag.class, Hash.class);
+        Tag tag = new Tag();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(tag, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
         }
@@ -70,7 +74,8 @@ public class TagViewModel implements HashesViewModel {
     }
 
     public TagViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.next(Tag.class, hash);
+        Tag tag = new Tag();
+        Pair<Indexable, Persistable> bundlePair = tangle.next(tag, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
         }

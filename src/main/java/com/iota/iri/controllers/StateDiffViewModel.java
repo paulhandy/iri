@@ -15,7 +15,9 @@ public class StateDiffViewModel {
     private Hash hash;
 
     public static StateDiffViewModel load(Tangle tangle, Hash hash) throws Exception {
-        return new StateDiffViewModel((StateDiff) tangle.load(StateDiff.class, hash), hash);
+        StateDiff stateDiff = new StateDiff();
+        tangle.load(stateDiff, hash);
+        return new StateDiffViewModel(stateDiff, hash);
     }
 
     public StateDiffViewModel(final Map<Hash, Long> state, final Hash hash) {

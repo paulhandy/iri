@@ -75,7 +75,9 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        Transaction transaction = new Transaction();
+        tangle.find(transaction, hash);
+        return new TransactionViewModel(transaction, new Hash(hash));
     }
 
     public static TransactionViewModel quietFromHash(final Tangle tangle, final Hash hash) {
@@ -86,7 +88,9 @@ public class TransactionViewModel {
         }
     }
     public static TransactionViewModel fromHash(final Tangle tangle, final Hash hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        Transaction transaction = new Transaction();
+        tangle.load(transaction, hash);
+        return new TransactionViewModel(transaction, hash);
     }
 
     public static boolean mightExist(final Tangle tangle, Hash hash) throws Exception {
@@ -181,7 +185,9 @@ public class TransactionViewModel {
     }
 
     public static TransactionViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
+        Transaction transaction = new Transaction();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(transaction, hash);
         if(transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }
@@ -189,7 +195,9 @@ public class TransactionViewModel {
     }
 
     public TransactionViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> transactionPair = tangle.next(Transaction.class, getHash());
+        Transaction transaction = new Transaction();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> transactionPair = tangle.next(transaction, getHash());
         if(transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }

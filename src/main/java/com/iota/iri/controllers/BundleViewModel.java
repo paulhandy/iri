@@ -29,7 +29,9 @@ public class BundleViewModel implements HashesViewModel {
     }
 
     public static BundleViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new BundleViewModel((Bundle) tangle.load(Bundle.class, hash), hash);
+        Bundle bundle = new Bundle();
+        tangle.load(bundle, hash);
+        return new BundleViewModel(bundle, hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
@@ -72,7 +74,9 @@ public class BundleViewModel implements HashesViewModel {
     }
 
     public static BundleViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Bundle.class, Hash.class);
+        Bundle bundle = new Bundle();
+        Hash hash = new Hash(Hash.NULL_HASH.bytes());
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(bundle, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new BundleViewModel((Bundle) bundlePair.hi, (Hash) bundlePair.low);
         }
@@ -80,7 +84,8 @@ public class BundleViewModel implements HashesViewModel {
     }
 
     public BundleViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.next(Bundle.class, hash);
+        Bundle bundle = new Bundle();
+        Pair<Indexable, Persistable> bundlePair = tangle.next(bundle, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new BundleViewModel((Bundle) bundlePair.hi, (Hash) bundlePair.low);
         }

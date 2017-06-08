@@ -35,7 +35,7 @@ public class Tangle {
         this.persistenceProviders.clear();
     }
 
-    public Persistable load(Class<?> model, Indexable index) throws Exception {
+    public Persistable load(Persistable model, Indexable index) throws Exception {
             Persistable out = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
                 if((out = provider.get(model, index)) != null) {
@@ -74,7 +74,7 @@ public class Tangle {
             }
     }
 
-    public Pair<Indexable, Persistable> getLatest(Class<?> model, Class<?> index) throws Exception {
+    public Pair<Indexable, Persistable> getLatest(Persistable model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if (latest == null) {
@@ -142,7 +142,7 @@ public class Tangle {
             return value;
     }
 
-    public Persistable find(Class<?> model, byte[] key) throws Exception {
+    public Persistable find(Persistable model, byte[] key) throws Exception {
             Persistable out = null;
             for (PersistenceProvider provider : this.persistenceProviders) {
                 if ((out = provider.seek(model, key)) != null) {
@@ -152,7 +152,7 @@ public class Tangle {
             return out;
     }
 
-    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> next(Persistable model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {
@@ -162,7 +162,7 @@ public class Tangle {
             return latest;
     }
 
-    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> previous(Persistable model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {
@@ -172,7 +172,7 @@ public class Tangle {
             return latest;
     }
 
-    public Pair<Indexable, Persistable > getFirst(Class<?> model, Class<?> index) throws Exception {
+    public Pair<Indexable, Persistable > getFirst(Persistable model, Indexable index) throws Exception {
             Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {

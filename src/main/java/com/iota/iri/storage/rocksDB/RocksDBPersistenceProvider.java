@@ -143,17 +143,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
-        final Indexable index;
-        final Persistable object;
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
+    public Pair<Indexable, Persistable> latest(Persistable object, Indexable index) throws Exception {
+        RocksIterator iterator = db.newIterator(classTreeMap.get().get(object.getClass()));
         iterator.seekToLast();
         if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            index = (Indexable) indexModel.newInstance();
             index.read(iterator.key());
             object.read(iterator.value());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+            ColumnFamilyHandle referenceHandle = metadataReference.get().get(object);
             if(referenceHandle != null) {
                 object.readMetadata(db.get(referenceHandle, iterator.key()));
             }
@@ -181,14 +177,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable get(Class<?> model, Indexable index) throws Exception {
-        Persistable object = (Persistable) model.newInstance();
-        object.read(db.get(classTreeMap.get().get(model), index == null? new byte[0]: index.bytes()));
-        ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+    public Persistable get(Persistable persistable, Indexable index) throws Exception {
+        persistable.read(db.get(classTreeMap.get().get(persistable.getClass()), index == null? new byte[0]: index.bytes()));
+        ColumnFamilyHandle referenceHandle = metadataReference.get().get(persistable.getClass());
         if(referenceHandle != null) {
-            object.readMetadata(db.get(referenceHandle, index == null? new byte[0]: index.bytes()));
+            persistable.readMetadata(db.get(referenceHandle, index == null? new byte[0]: index.bytes()));
         }
-        return object;
+        return persistable;
     }
 
 
@@ -230,8 +225,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable seek(Class<?> model, byte[] key) throws Exception {
-        Set<Indexable> hashes = keysStartingWith(model, key);
+    public Persistable seek(Persistable model, byte[] key) throws Exception {
+        Set<Indexable> hashes = keysStartingWith(model.getClass(), key);
         Indexable out;
         if(hashes.size() == 1) {
             out = (Indexable) hashes.toArray()[0];
@@ -244,18 +239,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
-        iterator.seek(index.bytes());
+    public Pair<Indexable, Persistable> next(Persistable object, Indexable indexable) throws Exception {
+        RocksIterator iterator = db.newIterator(classTreeMap.get().get(object.getClass()));
+        iterator.seek(indexable.bytes());
         iterator.next();
         if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            indexable = index.getClass().newInstance();
             indexable.read(iterator.key());
             object.read(iterator.value());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+            ColumnFamilyHandle referenceHandle = metadataReference.get().get(object.getClass());
             if(referenceHandle != null) {
                 object.readMetadata(db.get(referenceHandle, iterator.key()));
             }
@@ -268,50 +259,42 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
+    public Pair<Indexable, Persistable> previous(Persistable model, Indexable index) throws Exception {
+        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model.getClass()));
         iterator.seek(index.bytes());
         iterator.prev();
         if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            object.read(iterator.value());
-            indexable = (Indexable) index.getClass().newInstance();
-            indexable.read(iterator.key());
+            model.read(iterator.value());
+            index.read(iterator.key());
             ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
             if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+                model.readMetadata(db.get(referenceHandle, iterator.key()));
             }
         } else {
-            object = null;
-            indexable = null;
+            model = null;
+            index = null;
         }
         iterator.close();
-        return new Pair<>(indexable, object);
+        return new Pair<>(index, model);
     }
 
     @Override
-    public Pair<Indexable, Persistable> first(Class<?> model, Class<?> index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
+    public Pair<Indexable, Persistable> first(Persistable model, Indexable index) throws Exception {
+        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model.getClass()));
         iterator.seekToFirst();
         if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            object.read(iterator.value());
-            indexable = (Indexable) index.newInstance();
-            indexable.read(iterator.key());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+            model.read(iterator.value());
+            index.read(iterator.key());
+            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model.getClass());
             if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+                model.readMetadata(db.get(referenceHandle, iterator.key()));
             }
         } else {
-            object = null;
-            indexable = null;
+            model = null;
+            index = null;
         }
         iterator.close();
-        return new Pair<>(indexable, object);
+        return new Pair<>(index, model);
     }
 
     public boolean merge(Persistable model, Indexable index) throws Exception {

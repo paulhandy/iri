@@ -22,11 +22,11 @@ public interface PersistenceProvider {
 
     boolean exists(Class<?> model, Indexable key) throws Exception;
 
-    Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception;
+    Pair<Indexable, Persistable> latest(Persistable object, Indexable index) throws Exception;
 
     Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> otherClass) throws Exception;
 
-    Persistable get(Class<?> model, Indexable index) throws Exception;
+    Persistable get(Persistable model, Indexable index) throws Exception;
 
     boolean mayExist(Class<?> model, Indexable index) throws Exception;
 
@@ -34,12 +34,12 @@ public interface PersistenceProvider {
 
     Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value);
 
-    Persistable seek(Class<?> model, byte[] key) throws Exception;
+    Persistable seek(Persistable model, byte[] key) throws Exception;
 
-    Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception;
-    Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception;
+    Pair<Indexable, Persistable> next(Persistable model, Indexable index) throws Exception;
+    Pair<Indexable, Persistable> previous(Persistable model, Indexable index) throws Exception;
 
-    Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception;
+    Pair<Indexable, Persistable> first(Persistable model, Indexable indexModel) throws Exception;
 
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
 }

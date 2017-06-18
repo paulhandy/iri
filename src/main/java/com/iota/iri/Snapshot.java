@@ -4139,7 +4139,9 @@ public class Snapshot {
     }
 
     public Map<Hash, Long> getState() {
-        return state;
+        synchronized (latestSnapshotSyncObject) {
+            return new HashMap<>(state);
+        }
     }
 
     public Map<Hash, Long> diff(Map<Hash, Long> newState) {

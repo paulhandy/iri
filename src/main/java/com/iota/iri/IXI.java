@@ -21,7 +21,7 @@ public class IXI {
     private static final Logger log = LoggerFactory.getLogger(IXI.class);
 
     private final Gson gson = new GsonBuilder().create();
-    private final ScriptEngine scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
+    private final Map<String, ScriptEngine> scriptEngineMap = new TreeMap<>();
     /*
     private static final ScriptEngine scriptEngine = (new NashornScriptEngineFactory()).getScriptEngine((classname) ->
             !"com.iota.iri.IXI".equals(classname));
@@ -46,6 +46,7 @@ public class IXI {
 
     public void init(String extensionDirName) throws Exception {
         if(extensionDirName.length() > 0) {
+            scriptEngineMap.put("JavaScript", (new ScriptEngineManager()).getEngineByName("JavaScript"));
             watcher = FileSystems.getDefault().newWatchService();
             extensionDirectory = Paths.get(extensionDirName);
             if(extensionDirectory.toFile().exists() || extensionDirectory.toFile().mkdir()) {
@@ -104,9 +105,24 @@ public class IXI {
             extensions.put(pathToExtension, Arrays.asList(packageJson, pathToMain));
             extensions.get(pathToExtension).forEach(visitedPaths::add);
             //String[] split= relativePathToMain.getFileName().toString().split("[.]+(?=[^.]+$)");
-            attach(new FileReader(pathToMain.toFile()), name);
+            attach(getScriptEngine((String) request.get("engine")), new FileReader(pathToMain.toFile()), name);
         }
     }
+
+    private ScriptEngine getScriptEngine (String engine) {
+        ScriptEngine scriptEngine;
+        engine = engine == null?"JavaScript": engine;
+        if(scriptEngineMap.containsKey(engine)) {
+            scriptEngine = scriptEngineMap.get(engine);
+        } else {
+            scriptEngine = (new ScriptEngineManager()).getEngineByName(engine);
+        }
+        if(scriptEngine == null) {
+            scriptEngine = scriptEngineMap.get("JavaScript");
+        }
+        return scriptEngine;
+    }
+
     private Path getExtensionPath(Path path) {
         return extensionDirectory.relativize(path.getParent());
     }
@@ -117,12 +133,14 @@ public class IXI {
         String substring;
         for (String key :
                 ixiAPI.keySet()) {
-            substring = command.substring(0, key.length());
-            if(substring.equals(key)) {
-                String subCmd = command.substring(key.length()+1);
-                ixiMap = ixiAPI.get(key);
-                res = ixiMap.get(subCmd).call(request);
-                if(res != null) return res;
+            if(key.length() <= command.length()) {
+                substring = command.substring(0, key.length());
+                if (substring.equals(key)) {
+                    String subCmd = command.substring(key.length() + 1);
+                    ixiMap = ixiAPI.get(key);
+                    res = ixiMap.get(subCmd).call(request);
+                    if (res != null) return res;
+                }
             }
         }
         return null;
@@ -204,7 +222,7 @@ public class IXI {
         }
     }
 
-    private void attach(final Reader ixi, String name) throws ScriptException {
+    private void attach(final ScriptEngine scriptEngine, final Reader ixi, final String name) throws ScriptException {
             Map<String, CallableRequest<AbstractResponse>> ixiMap = new HashMap<>();
             Map<String, Runnable> startStop = new HashMap<>();
             Bindings bindings = scriptEngine.createBindings();

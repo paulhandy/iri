@@ -106,6 +106,19 @@ public class Converter {
         }
     }
 
+    public static int[] trits(final long value) {
+        int[] lengthTrits = new int[Converter.NUMBER_OF_TRITS_IN_A_BYTE * Long.SIZE];
+        copyTrits(value, lengthTrits, 0, lengthTrits.length);
+        int newLength;
+        for(newLength =  lengthTrits.length; newLength-- > 0;) {
+            if(lengthTrits[newLength] != 0) {
+                newLength++;
+                break;
+            }
+        }
+        return Arrays.copyOf(lengthTrits, newLength);
+    }
+
     public static String trytes(final int[] trits, final int offset, final int size) {
 
         final StringBuilder trytes = new StringBuilder();

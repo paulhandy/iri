@@ -259,7 +259,7 @@ public class TipsManager {
         while((hash = nonAnalyzedTransactions.poll()) != null) {
             if(analyzedTranscations.add(hash)) {
                 transactionViewModel = TransactionViewModel.fromHash(tangle, hash);
-                cumulativeWeight += transactionViewModel.weightMagnitude;
+                cumulativeWeight++;
                 if(cumulativeWeight >= Long.MAX_VALUE/2) {
                     cumulativeWeight = Long.MAX_VALUE/2;
                     break;

@@ -3,7 +3,6 @@ package com.iota.iri.controllers;
 import java.util.*;
 
 import com.iota.iri.model.*;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;

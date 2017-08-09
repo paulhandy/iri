@@ -3,10 +3,6 @@ package com.iota.iri;
 import java.io.File;
 import java.io.IOException;
 
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,14 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
-import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.network.replicator.ReplicatorSinkPool;
-import com.iota.iri.network.replicator.ReplicatorSourcePool;
 import com.iota.iri.service.API;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -38,8 +27,8 @@ public class IRI {
     public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
     public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
 
-    public static final String MAINNET_NAME = "IRI";
-    public static final String TESTNET_NAME = "IRI Testnet";
+    public static final String MAINNET_NAME = "IRI Read-Only";
+    public static final String TESTNET_NAME = "IRI Testnet Read-Only";
     public static final String VERSION = "1.2.4";
     public static Iota iota;
     public static API api;
@@ -106,20 +95,15 @@ public class IRI {
 
         final Option<String> config = parser.addStringOption('c', "config");
         final Option<String> port = parser.addStringOption('p', "port");
-        final Option<String> rportudp = parser.addStringOption('u', "udp-receiver-port");
-        final Option<String> rporttcp = parser.addStringOption('t', "tcp-receiver-port");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> remoteAuth = parser.addStringOption("remote-auth");
-        final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> export = parser.addBooleanOption("export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
         final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");
         final Option<Boolean> rescan = parser.addBooleanOption("rescan");
-        final Option<String> sendLimit = parser.addStringOption("send-limit");
-        final Option<String> maxPeers = parser.addStringOption("max-peers");
 
         try {
             assert args != null;
@@ -153,13 +137,6 @@ public class IRI {
             printUsage();
         }
 
-        String cns = parser.getOptionValue(neighbors);
-        if (cns == null) {
-            log.warn("No neighbor has been specified. Server starting nodeless.");
-            cns = StringUtils.EMPTY;
-        }
-        configuration.put(DefaultConfSettings.NEIGHBORS, cns);
-
         final String vremoteapilimit = parser.getOptionValue(remoteLimitApi);
         if (vremoteapilimit != null) {
             log.debug("The following api calls are not allowed : {} ", vremoteapilimit);
@@ -170,16 +147,6 @@ public class IRI {
         if (vremoteauth != null) {
             log.debug("Remote access requires basic authentication");
             configuration.put(DefaultConfSettings.REMOTE_AUTH, vremoteauth);
-        }
-
-        final String vrportudp = parser.getOptionValue(rportudp);
-        if (vrportudp != null) {
-            configuration.put(DefaultConfSettings.UDP_RECEIVER_PORT, vrportudp);
-        }
-        
-        final String vrporttcp = parser.getOptionValue(rporttcp);
-        if (vrporttcp != null) {
-            configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
         }
 
         if (parser.getOptionValue(remote) != null) {
@@ -216,24 +183,12 @@ public class IRI {
             configuration.put(DefaultConfSettings.RESCAN_DB, "true");
         }
 
-        final String vsendLimit = parser.getOptionValue(sendLimit);
-        if (vsendLimit != null) {
-            configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
-        }
-        
-        final String vmaxPeers = parser.getOptionValue(maxPeers);
-        if (vmaxPeers != null) {
-            configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
-        }
     }
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-n,--neighbors} '<list of neighbors>'] " +
-                "[{-p,--port} 14600] " +                
+                "[{-p,--port} 14600] " +
                 "[{-c,--config} 'config-file-name'] " +
-                "[{-u,--udp-receiver-port} 14600] " +
-                "[{-t,--tcp-receiver-port} 15600] " +
                 "[{-d,--debug} false] " +
                 "[{--testnet} false]" +
                 "[{--remote} false]" +

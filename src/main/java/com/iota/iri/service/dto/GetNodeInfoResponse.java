@@ -18,17 +18,13 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private String latestSolidSubtangleMilestone;
     private int latestSolidSubtangleMilestoneIndex;
 
-    private int neighbors;
-    private int packetsQueueSize;
     private long time;
     private int tips;
-    private int transactionsToRequest;
 
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
 	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex,
-	        int neighbors, int packetsQueueSize,
-	        long currentTimeMillis, int tips, int numberOfTransactionsToRequest) {
+	        long currentTimeMillis, int tips) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
 		res.appName = appName;
 		res.appVersion = appVersion;
@@ -44,11 +40,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		res.latestSolidSubtangleMilestone = latestSolidSubtangleMilestone.toString();
 		res.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
 
-		res.neighbors = neighbors;
-		res.packetsQueueSize = packetsQueueSize;
 		res.time = currentTimeMillis;
 		res.tips = tips;
-		res.transactionsToRequest = numberOfTransactionsToRequest;
 		return res;
 	}
 
@@ -96,24 +89,12 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		return latestSolidSubtangleMilestoneIndex;
 	}
 
-	public int getNeighbors() {
-		return neighbors;
-	}
-
-	public int getPacketsQueueSize() {
-		return packetsQueueSize;
-	}
-
 	public long getTime() {
 		return time;
 	}
 
 	public int getTips() {
 		return tips;
-	}
-
-	public int getTransactionsToRequest() {
-		return transactionsToRequest;
 	}
 
 }

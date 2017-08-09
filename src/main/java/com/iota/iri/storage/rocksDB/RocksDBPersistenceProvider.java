@@ -498,8 +498,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
         //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
-        db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
-        db.enableFileDeletions(true);
+        db = RocksDB.openReadOnly(options, path, columnFamilyDescriptors, familyHandles);
 
         fillmodelColumnHandles(familyHandles);
     }

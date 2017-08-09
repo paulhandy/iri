@@ -3,11 +3,7 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
-import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
@@ -38,10 +34,6 @@ public class Iota {
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsManager tipsManager;
-    public final TransactionRequester transactionRequester;
-    public final Node node;
-    public final UDPReceiver udpReceiver;
-    public final Replicator replicator;
     public final Configuration configuration;
     public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
@@ -77,14 +69,10 @@ public class Iota {
                 configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)
                 );
         tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, messageQ);
         latestSnapshot = new Snapshot(Snapshot.initialSnapshot);
         milestone =  new Milestone(tangle, coordinator, transactionValidator, testnet, messageQ);
-        node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet);
-        udpReceiver = new UDPReceiver(udpPort, node);
-        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester, messageQ);
+        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
     }
 
@@ -99,10 +87,6 @@ public class Iota {
         milestone.init(SpongeFactory.Mode.CURL, ledgerValidator, configuration.booling(Configuration.DefaultConfSettings.REVALIDATE));
         transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MAINNET_MWM), configuration.integer(Configuration.DefaultConfSettings.TESTNET_MWM));
         tipsManager.init();
-        transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
-        udpReceiver.init();
-        replicator.init();
-        node.init();
     }
 
     private void rescan_db() throws Exception {
@@ -165,9 +149,6 @@ public class Iota {
     public void shutdown() throws Exception {
         milestone.shutDown();
         tipsManager.shutdown();
-        node.shutdown();
-        udpReceiver.shutdown();
-        replicator.shutdown();
         transactionValidator.shutdown();
         tangle.shutdown();
     }

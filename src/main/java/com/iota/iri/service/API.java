@@ -5,8 +5,6 @@ import static io.undertow.Handlers.path;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -26,7 +24,6 @@ import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 import com.iota.iri.controllers.*;
-import com.iota.iri.network.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,19 +39,16 @@ import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
 import com.iota.iri.service.dto.AttachToTangleResponse;
 import com.iota.iri.service.dto.ErrorResponse;
 import com.iota.iri.service.dto.ExceptionResponse;
 import com.iota.iri.service.dto.FindTransactionsResponse;
 import com.iota.iri.service.dto.GetBalancesResponse;
 import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
 import com.iota.iri.service.dto.GetNodeInfoResponse;
 import com.iota.iri.service.dto.GetTipsResponse;
 import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
 import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
 
@@ -179,16 +173,6 @@ public class API {
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
-
-                case "addNeighbors": {
-                    if (!request.containsKey("uris")) {
-                        return ErrorResponse.create("Invalid params");
-                    }
-                    final List<String> uris = (List<String>) request.get("uris");
-                    log.debug("Invoking 'addNeighbors' with {}", uris);
-
-                    return addNeighborsStatement(uris);
-                }
                 case "attachToTangle": {
                     if (!request.containsKey("trunkTransaction") ||
                             !request.containsKey("branchTransaction") ||
@@ -218,19 +202,6 @@ public class API {
                     }
                     List<String> elements = attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
                     return AttachToTangleResponse.create(elements);
-                }
-                case "broadcastTransactions": {
-                    if (!request.containsKey("trytes")) {
-                        return ErrorResponse.create("Invalid params");
-                    }
-                    final List<String> trytes = (List<String>) request.get("trytes");
-                    for (final String tryt : trytes) {
-                        if (!validTrytes(tryt, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
-                            return ErrorResponse.create("Invalid trytes input");
-                        }
-                    }
-                    broadcastTransactionStatement(trytes);
-                    return AbstractResponse.createEmptyResponse();
                 }
                 case "findTransactions": {
                     if (!request.containsKey("bundles") &&
@@ -278,18 +249,14 @@ public class API {
                     }
                     return getNewInclusionStateStatement(trans, tps);
                 }
-                case "getNeighbors": {
-                    return getNeighborsStatement();
-                }
                 case "getNodeInfo": {
                     String name = instance.configuration.booling(Configuration.DefaultConfSettings.TESTNET) ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
                             instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex,
-                            instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
-                            System.currentTimeMillis(), instance.tipsViewModel.size(),
-                            instance.transactionRequester.numberOfTransactionsToRequest());
+                            System.currentTimeMillis(), instance.tipsViewModel.size()
+                            );
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -338,14 +305,6 @@ public class API {
                     pearlDiver.cancel();
                     return AbstractResponse.createEmptyResponse();
                 }
-                case "removeNeighbors": {
-                    if (!request.containsKey("uris")) {
-                        return ErrorResponse.create("Invalid params");
-                    }
-                    final List<String> uris = (List<String>) request.get("uris");
-                    log.debug("Invoking 'removeNeighbors' with {}", uris);
-                    return removeNeighborsStatement(uris);
-                }
 
                 case "storeTransactions": {
                     if (!request.containsKey("trytes")) {
@@ -357,15 +316,6 @@ public class API {
                         return AbstractResponse.createEmptyResponse();
                     } else {
                         return ErrorResponse.create("Invalid trytes input");
-                    }
-                }
-                case "getMissingTransactions": {
-                    //TransactionRequester.instance().rescanTransactionsToRequest();
-                    synchronized (instance.transactionRequester) {
-                        List<String> missingTx = Arrays.stream(instance.transactionRequester.getRequestedTransactions())
-                                .map(Hash::toString)
-                                .collect(Collectors.toList());
-                        return GetTipsResponse.create(missingTx);
                     }
                 }
                 default: {
@@ -384,25 +334,6 @@ public class API {
 
     public boolean invalidSubtangleStatus() {
         return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
-    }
-
-    private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
-        final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-        
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-            
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Removing neighbor: "+uriString);
-                if (instance.node.removeNeighbor(uri,true)) {
-                    numberOfRemovedNeighbors.incrementAndGet();
-                }
-            }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
-        }
-        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
@@ -485,10 +416,6 @@ public class API {
             }
         }
         return true;
-    }
-
-    private AbstractResponse getNeighborsStatement() {
-        return GetNeighborsResponse.create(instance.node.getNeighbors());
     }
 
     private AbstractResponse getNewInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
@@ -655,16 +582,6 @@ public class API {
         return FindTransactionsResponse.create(elements);
     }
 
-    public void broadcastTransactionStatement(final List<String> trytes2) {
-        for (final String tryte : trytes2) {
-            //validate PoW - throws exception if invalid
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte), instance.transactionValidator.getMinWeightMagnitude());
-            //push first in line to broadcast
-            transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
-            instance.node.broadcast(transactionViewModel);
-        }
-    }
-
     private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
@@ -784,37 +701,6 @@ public class API {
         return elements;
     }
 
-    private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
-
-        int numberOfAddedNeighbors = 0;
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-            
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Adding neighbor: "+uriString);
-                // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                final Neighbor neighbor;
-                switch(uri.getScheme()) {
-                    case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
-                        break;
-                    case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
-                        break;
-                    default:
-                        return ErrorResponse.create("Invalid uri scheme");
-                }
-                if (!instance.node.getNeighbors().contains(neighbor)) {
-                    instance.node.getNeighbors().add(neighbor);
-                    numberOfAddedNeighbors++;
-                }
-            }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
-        }
-        return AddedNeighborsResponse.create(numberOfAddedNeighbors);
-    }
 
     private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime)
             throws IOException {

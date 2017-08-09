@@ -1,9 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.*;
-import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -25,14 +23,12 @@ public class LedgerValidator {
     private final Set<Hash> approvedHashes = new HashSet<>();
     private final Tangle tangle;
     private final Milestone milestone;
-    private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    public LedgerValidator(Tangle tangle, final Snapshot latestSnapshot, Milestone milestone, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public LedgerValidator(Tangle tangle, final Snapshot latestSnapshot, Milestone milestone, MessageQ messageQ) {
         this.tangle = tangle;
         this.milestone = milestone;
-        this.transactionRequester = transactionRequester;
         stateSinceMilestone = new Snapshot(latestSnapshot);
         this.latestSnapshot = latestSnapshot;
         this.messageQ = messageQ;
@@ -80,7 +76,6 @@ public class LedgerValidator {
                 if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        transactionRequester.requestTransaction(transactionViewModel.getHash(), milestone);
                         return null;
 
                     } else {

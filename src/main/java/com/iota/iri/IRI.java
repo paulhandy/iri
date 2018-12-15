@@ -113,6 +113,7 @@ public class IRI {
             iota = new Iota(config);
             ixi = new IXI(iota);
             api = new API(iota, ixi);
+            api.readPreviousEpochsSpentAddresses(false);
             shutdownHook();
 
             try {

@@ -3,9 +3,15 @@ package com.iota.iri.crypto;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.Pair;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Test;
+//import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.*;
@@ -15,6 +21,7 @@ import static org.junit.Assert.*;
  */
 public class ISSTest {
     static String seed = "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN";
+    static String thedigest = "IAOP9MMCMUVKHPHUOCDTCRHOELK9QC99C9BMUWVJACTMFZXKIHVFMCNTZWJXYTJDCPLCHXXMXRPLUDDEC";
     static String message = "JCRNMXX9DIEVJJG9VW9QDUMVDGDVHANQDTCPPOPHLTBUBXULSIALRBVUINDPNGUFZLKDPOK9WBJMYCXF9" +
             "MFQN9ZKMROOXHULIDDXRNWMDENBWJWVVA9XPNHQUVDFSMQ9ETWKWGLOLYPWW9GQPVNDYJIRDBWVCBUHUE" +
             "GELSTLEXGAMMQAHSUEABKUSFOVGYRQBXJMORXIDTIPENPAFIUV9DOGZCAEPRJQOISRZDZBWWQQJVQDS9Y" +
@@ -24,6 +31,66 @@ public class ISSTest {
             "ZYPRNUOHFGDYIWFVKIUNYBGBHICRQTLDQQUTJX9DDSQANVKMCDZ9VEQBCHHSATVFIDYR9XUSDJHQDRBVK" +
             "9JUUZVWGCCWVXAC9ZIOKBWOKCTCJVXIJFBSTLNZCPJMAKDPYLTHMOKLFDNONJLLDBDXNFKPKUBKDU9QFS" +
             "XGVXS9PEDBDDBGFESSKCWUWMTOGHDLOPRILYYPSAQVTSQYLIPK9ATVMMYSTASHEZEFWBUNR9XKGCHR9MB";
+
+    @Test
+    public void newsiggy() throws Exception {
+        int index = 9;
+        int nof = 3;
+        SpongeFactory.Mode mode = SpongeFactory.Mode.CURLP81;
+
+        byte[] seedTrits = new byte[Sponge.HASH_LENGTH];
+
+        Converter.trits(seed, seedTrits, 0);
+        byte[] subseed = ISS.subseed(mode, seedTrits, index);
+        byte[] key = ISS.key(mode, subseed, nof);
+
+
+        Sponge curl = new Kerl();
+        byte[] digtrits = Converter.allocateTritsForTrytes(thedigest.length());
+        Converter.trits(thedigest, digtrits, 0);
+
+        byte[] normalizedFragments = ISS.normalizedBundle(digtrits);
+        List<byte[]> dd = new ArrayList<>();
+        List<byte[]> ss = new ArrayList<>();
+        for(int i = 0; i < 3; i++) {
+            byte[] normalizedFragment = Arrays.copyOfRange(normalizedFragments, i * ISS.NUMBER_OF_FRAGMENT_CHUNKS,
+                    (i + 1 ) * ISS.NUMBER_OF_FRAGMENT_CHUNKS);
+            byte[] signature = ISS.signatureFragment(mode,
+                    normalizedFragment,
+                    Arrays.copyOfRange(key, i * ISS.FRAGMENT_LENGTH, (i+1) * ISS.FRAGMENT_LENGTH));
+            byte[] sigDigest = ISS.digest(mode, normalizedFragment, signature);
+            dd.add(sigDigest);
+            ss.add(signature);
+        }
+        byte[] signedAddress = ISS.address(mode, dd.stream().reduce(ArrayUtils::addAll).get());
+        byte[] digest = ISS.digests(mode, key);
+        byte[] address = ISS.address(mode, digest);
+
+        for(byte[] sig:ss) {
+            String siggy = Converter.trytes(sig);
+            System.out.println(siggy);
+        }
+        System.out.println(new Hash(address));
+        assertTrue(Arrays.equals(address, signedAddress));
+    }
+    @Test
+    public void treeGenerationISS() throws Exception {
+        int index = 10;
+        int depth = 6;
+        int nof = 3;
+        Merkle t = new Merkle(SpongeFactory.Mode.CURLP81, seed, 0, 64, nof);
+        t.generate();
+        System.out.println(new Hash(t.root()));
+        //t.branch(6).stream().map(Hash::new).forEach(System.out::println);
+
+        byte[] digtrits = Converter.allocateTritsForTrytes(thedigest.length());
+        Converter.trits(thedigest, digtrits, 0);
+        Pair<List<byte[]>, List<byte[]>> sig = t.sign(digtrits, index);
+
+        sig.low.stream().map(Converter::trytes).forEach(System.out::println);
+        sig.hi.stream().map(Converter::trytes).forEach(System.out::println);
+
+    }
 
     @Test
     public void testSignatureResolvesToAddressISS() throws Exception {
